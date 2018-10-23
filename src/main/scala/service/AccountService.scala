@@ -2,13 +2,13 @@ package service
 
 import model.AccountInfo
 import model.Info.Uuid
-import repository.AccountInMemoryRepository
+import repository.{AccountRepository}
 import service.validator.{InvalidUuidFormatException, NoSuchAccountException}
 import service.validator.Validator.uuidRegEx
 
 import scala.util.{Failure, Success, Try}
 
-class AccountService()(implicit val accountRepository: AccountInMemoryRepository) {
+class AccountService()(implicit val accountRepository: AccountRepository) {
 
   def getAccountInfo(id: Uuid): Try[AccountInfo] = {
     if (id matches uuidRegEx) {
