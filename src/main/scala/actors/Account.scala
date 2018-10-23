@@ -26,15 +26,18 @@ class Account(var info: AccountInfo, accountManager: ActorRef)
       sender() ! info
 
     case Deposit(amount) =>
-      info = AccountInfo(info.id, info.balance + amount)
+      log.debug("Depositing {} to account {}", amount, info.id)
+      info = info.copy(balance = info.balance + amount)
       accountManager ! UpdateAccount(info)
       sender() ! Success(info)
 
     case Withdrawal(amount) if amount > info.balance =>
+      log.debug("Cannot withdraw {} from {}", amount, info)
       sender() ! InsufficientFunds(info)
 
     case Withdrawal(amount)  =>
-      info = AccountInfo(info.id, info.balance - amount)
+      log.debug("Withdrawing {} from account {}", amount, info.id)
+      info = info.copy(balance = info.balance - amount)
       accountManager ! UpdateAccount(info)
       sender() ! Success(info)
   }
