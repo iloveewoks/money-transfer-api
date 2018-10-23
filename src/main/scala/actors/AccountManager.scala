@@ -15,26 +15,28 @@ class AccountManager()(implicit val accountService: AccountService)
   import AccountManager._
 
   override def receive: Receive = {
-    case CreateAccount => {
-      sender() ! AccountInfoMsg(accountService createAccount)
-    }
+    case CreateAccount =>
+      sender() ! accountService.createAccount
 
-    case GetAccountInfo(id) => {
+    case GetAccountInfo(id) =>
       accountService getAccountInfo id match {
-        case Success(info) => sender() ! AccountInfoMsg(info)
+        case Success(info) => sender() ! info
 
         case Failure(ex: InvalidUuidFormatException) => sender() ! InvalidUuidFormat(ex)
 
         case Failure(ex: NoSuchAccountException) => sender() ! NoSuchAccount(ex)
       }
-    }
+
+    case GetAllAccounts =>
+      sender() ! AllAccountsInfo(accountService findAll)
   }
 }
 
 
 object AccountManager {
   case class GetAccountInfo(id: Uuid)
-  case class AccountInfoMsg(info: AccountInfo)
+  case class GetAllAccounts()
+  case class AllAccountsInfo(accounts: Iterable[AccountInfo])
   case class CreateAccount()
   case class UpdateAccount(newInfo: AccountInfo)
   case class InvalidUuidFormat(ex: InvalidUuidFormatException)

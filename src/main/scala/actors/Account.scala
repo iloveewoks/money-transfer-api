@@ -1,6 +1,6 @@
 package actors
 
-import actors.AccountManager.{AccountInfoMsg, UpdateAccount}
+import actors.AccountManager.UpdateAccount
 import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence.PersistentActor
 import model.{AccountInfo, UpdateAccountInfo}
@@ -23,7 +23,7 @@ class Account(var info: AccountInfo, accountManager: ActorRef)
   override def receiveCommand: Receive = {
     case GetInfo =>
       log.debug("Getting account info: {}", info)
-      sender() ! AccountInfoMsg(info)
+      sender() ! info
 
     case Deposit(amount) =>
       info = AccountInfo(info.id, info.balance + amount)

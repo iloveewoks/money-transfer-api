@@ -16,6 +16,8 @@ class AccountInMemoryRepository extends AccountRepository {
 
   override def findById(id: Uuid): Option[AccountInfo] = accounts get id
 
+  override def findAll: Iterable[AccountInfo] = accounts.values
+
   override def save(entity: AccountInfo): AccountInfo = accounts + entity.id -> entity _2
 
   override def update(entity: AccountInfo): AccountInfo = {
@@ -24,5 +26,4 @@ class AccountInMemoryRepository extends AccountRepository {
   }
 
   override def createAccount: AccountInfo = save(AccountInfo(UUID.randomUUID.toString))
-
 }
