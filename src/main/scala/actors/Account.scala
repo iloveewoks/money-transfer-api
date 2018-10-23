@@ -1,6 +1,6 @@
 package actors
 
-import actors.Account.{AccountInfoMsg, GetAccountInfo}
+import actors.AccountManager.{AccountInfoMsg, GetAccountInfo}
 import akka.actor.ActorLogging
 import akka.persistence.PersistentActor
 import model.{AccountInfo, UpdateAccountInfo}
@@ -23,9 +23,4 @@ class Account(var info: AccountInfo) extends PersistentActor with ActorLogging {
       sender() ! AccountInfoMsg(info)
     }
   }
-}
-
-object Account {
-  case class GetAccountInfo()
-  case class AccountInfoMsg(info: AccountInfo)
 }
