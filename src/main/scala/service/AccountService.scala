@@ -2,7 +2,7 @@ package service
 
 import model.AccountInfo
 import model.Info.Uuid
-import repository.{AccountRepository}
+import repository.AccountRepository
 import service.validator.{InvalidUuidFormatException, NoSuchAccountException}
 import service.validator.Validator.uuidRegEx
 
@@ -19,7 +19,7 @@ class AccountService()(implicit val accountRepository: AccountRepository) {
     } else Failure(InvalidUuidFormatException(s"UUID $id is invalid"))
   }
 
-  def createAccount = accountRepository createAccount
+  def createAccount: AccountInfo = accountRepository createAccount
 
   def updateAccount(newAccountInfo: AccountInfo): Try[AccountInfo] =
     getAccountInfo(newAccountInfo.id) map accountRepository.update
