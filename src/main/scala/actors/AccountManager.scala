@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import model.AccountInfo
 import model.Info.Uuid
 import service.AccountService
@@ -8,7 +8,7 @@ import service.validator.{InvalidUuidFormatException, NoSuchAccountException}
 
 import scala.util.{Failure, Success}
 
-class AccountManager()(implicit val accountService: AccountService)
+class AccountManager(system: ActorSystem)(implicit val accountService: AccountService)
   extends Actor
     with ActorLogging{
 
@@ -29,12 +29,24 @@ class AccountManager()(implicit val accountService: AccountService)
 
     case GetAllAccounts =>
       sender() ! AllAccountsInfo(accountService findAll)
+
+    case GetAccountActorRef(id) =>
+      accountService getAccountInfo id match {
+        case Success(info) =>
+          val accountActorRef = system.actorOf(Props(new Account(info, self)), info.id)
+          sender() ! accountActorRef
+
+        case Failure(ex: InvalidUuidFormatException) => sender() ! InvalidUuidFormat(ex)
+
+        case Failure(ex: NoSuchAccountException) => sender() ! NoSuchAccount(ex)
+      }
   }
 }
 
 
 object AccountManager {
   case class GetAccountInfo(id: Uuid)
+  case class GetAccountActorRef(id: Uuid)
   case class GetAllAccounts()
   case class AllAccountsInfo(accounts: Iterable[AccountInfo])
   case class CreateAccount()
