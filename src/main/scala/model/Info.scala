@@ -6,14 +6,17 @@ object Info {
   type Uuid = String
 }
 
-case class AccountInfo(id: Uuid, balance: BigDecimal = 0)
+trait Info {
+  val id: Uuid
+}
+
+case class AccountInfo(override val id: Uuid, balance: BigDecimal = 0) extends Info
 
 trait UpdateInfo[T] {
   def info: T
 }
 
-trait TransactionInfo {
-  val id: Uuid
+trait TransactionInfo extends Info {
   val status: TransactionStatus.Value
 }
 case class DepositTransactionInfo(override val id: Uuid,
