@@ -24,6 +24,6 @@ class AccountService()(implicit val accountRepository: AccountRepository) {
   def createAccount: AccountInfo = accountRepository createAccount
 
   def updateAccount(newAccountInfo: AccountInfo): Try[AccountInfo] =
-    getAccountInfo(newAccountInfo.id) map accountRepository.update
+    getAccountInfo(newAccountInfo.id) map { _ => accountRepository.update(newAccountInfo) }
 
 }
