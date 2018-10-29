@@ -1,27 +1,22 @@
 import actors.{AccountManager, TransactionManager}
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.server.Directives._
-import akka.stream.ActorMaterializer
-import akka.util.Timeout
 import repository.{AccountInMemoryRepository, AccountRepository, TransactionInMemoryRepository, TransactionRepository}
 import server.Server
 import service.{AccountService, TransactionService}
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
-import scala.concurrent.duration._
 import scala.io.StdIn
 
 object MoneyTransferApp extends App {
   implicit val system = ActorSystem("test")
+  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
   implicit val accountRepository: AccountRepository = new AccountInMemoryRepository
   implicit val accountService: AccountService = new AccountService
   val accountManager = system.actorOf(Props(new AccountManager), "account-manager")
   implicit val transactionRepository: TransactionRepository = new TransactionInMemoryRepository
   implicit val transactionService: TransactionService = new TransactionService
   val transactionManager = system.actorOf(Props(new TransactionManager(accountManager)), "transaction-manager")
-  implicit val timeout: Timeout = 150.seconds
-  implicit val ec: ExecutionContextExecutor = system.dispatcher
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   val route =
     path("hello") {
