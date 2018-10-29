@@ -29,6 +29,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   }
 
   implicit object transactionStatusFormat extends EnumerationFormat[TransactionStatus.Value](TransactionStatus)
+  implicit object transactionTypeFormat extends EnumerationFormat[TransactionType.Value](TransactionType)
   implicit val accountInfoFormat = jsonFormat2(AccountInfo)
   implicit val depositTransactionInfoFormat = jsonFormat4(DepositTransactionInfo)
   implicit val withdrawalTransactionInfoFormat = jsonFormat4(WithdrawalTransactionInfo)
