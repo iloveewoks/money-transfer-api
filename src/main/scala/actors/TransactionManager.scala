@@ -47,6 +47,7 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
       val transaction = TransferTransactionInfo(generateUuid, from, to, amount, TransactionStatus.CREATED)
       transactionService save transaction
       requests += transaction.id -> sender
+      accountManager ! AccountManager.Withdraw(from, transaction.id, amount)
 
     case AccountManager.DepositSuccess(transactionId, _) =>
       processRequest(transactionId,
