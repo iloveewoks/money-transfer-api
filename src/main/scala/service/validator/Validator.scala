@@ -6,3 +6,4 @@ object Validator {
 
 case class InvalidUuidFormatException(message: String) extends Exception(message)
 case class NoSuchAccountException(message: String) extends Exception(message)
+case class NoSuchTransactionException(message: String) extends Exception(message)

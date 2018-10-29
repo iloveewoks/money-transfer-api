@@ -1,9 +1,13 @@
 package model
 
+import java.util.UUID
+
 import model.Info.Uuid
 
 object Info {
   type Uuid = String
+
+  def generateUuid: Uuid = UUID.randomUUID().toString
 }
 
 trait Info {
@@ -37,4 +41,11 @@ case class TransferTransactionInfo(override val id: Uuid,
 
 object TransactionStatus extends Enumeration {
   val CREATED = Value("Transaction created")
+
+  val ERROR = Value("There was an error during transaction")
+
+  val COMPLETED = Value("Transaction completed")
+
+  val WITHDRAWN = Value("Funds been withdrawn during transfer transaction")
+
 }
