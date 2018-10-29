@@ -48,7 +48,7 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
       transactionService save transaction
       requests += transaction.id -> sender
 
-    case AccountManager.DepositSuccess(transactionId, info) =>
+    case AccountManager.DepositSuccess(transactionId, _) =>
       processRequest(transactionId,
         { requester =>
           transactionService.getTransactionInfo(transactionId) match {
@@ -56,12 +56,14 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
               val updatedTransaction =
                 transactionService updateTransaction transaction.copy(status = TransactionStatus.COMPLETED)
 
+              requests -= transactionId
               requester ! TransactionCompleted(updatedTransaction.get)
 
             case Success(transaction: TransferTransactionInfo) =>
               val updatedTransaction =
                 transactionService updateTransaction transaction.copy(status = TransactionStatus.COMPLETED)
 
+              requests -= transactionId
               requester ! TransactionCompleted(updatedTransaction.get)
 
             case Failure(ex: InvalidUuidFormatException) => requester ! InvalidUuidFormat(ex, transactionId)
@@ -79,11 +81,11 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
               val updatedTransaction =
                 transactionService updateTransaction transaction.copy(status = TransactionStatus.COMPLETED)
 
+              requests -= transactionId
               requester ! TransactionCompleted(updatedTransaction.get)
 
             case Success(transaction: TransferTransactionInfo) =>
-              val updatedTransaction =
-                transactionService updateTransaction transaction.copy(status = TransactionStatus.WITHDRAWN)
+              transactionService updateTransaction transaction.copy(status = TransactionStatus.WITHDRAWN)
 
               accountManager ! AccountManager.Deposit(transaction.to, transaction.id, transaction.amount)
 
