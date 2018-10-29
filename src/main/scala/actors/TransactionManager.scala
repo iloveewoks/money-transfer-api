@@ -109,7 +109,7 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
             case Success(transaction: TransferTransactionInfo) =>
               transactionService updateTransaction transaction.copy(status = TransactionStatus.ERROR)
 
-              accountManager ! msg
+              requester ! msg
 
             case Failure(ex: InvalidUuidFormatException) => requester ! InvalidUuidFormat(ex, transactionId)
 
@@ -132,7 +132,7 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
                 case Success(transaction: TransferTransactionInfo) =>
                   transactionService updateTransaction transaction.copy(status = TransactionStatus.ERROR)
 
-                  accountManager ! msg
+                  requester ! msg
 
                 case Failure(ex: InvalidUuidFormatException) => requester ! InvalidUuidFormat(ex, transactionId)
 
@@ -156,7 +156,7 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
                 case Success(transaction: TransferTransactionInfo) =>
                   transactionService updateTransaction transaction.copy(status = TransactionStatus.ERROR)
 
-                  accountManager ! msg
+                  requester ! msg
 
                 case Failure(ex: InvalidUuidFormatException) => requester ! InvalidUuidFormat(ex, transactionId)
 

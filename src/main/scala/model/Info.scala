@@ -40,12 +40,12 @@ case class TransferTransactionInfo(override val id: Uuid,
                                    override val status: TransactionStatus.Value)  extends TransactionInfo
 
 object TransactionStatus extends Enumeration {
-  val CREATED = Value("Transaction created")
+  val CREATED = Value
 
-  val ERROR = Value("There was an error during transaction")
+  val ERROR = Value
 
-  val COMPLETED = Value("Transaction completed")
+  val COMPLETED = Value
 
-  val WITHDRAWN = Value("Funds been withdrawn during transfer transaction")
+  val WITHDRAWN = Value
 
 }
