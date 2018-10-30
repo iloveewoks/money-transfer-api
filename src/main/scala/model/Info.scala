@@ -29,7 +29,7 @@ trait TransactionInfo extends Info {
   val transactionType: TransactionType.Value
   val dateTime: Instant
 }
-case class DepositTransactionInfo(override val id: Uuid,
+case class DepositTransactionInfo(override val id: Uuid = Info.randomUuid,
                                   to: Uuid,
                                   amount: BigDecimal,
                                   override val status: TransactionStatus.Value = TransactionStatus.CREATED,
@@ -41,7 +41,7 @@ case class DepositTransactionInfo(override val id: Uuid,
   override val transactionType = TransactionType.DEPOSIT
 }
 
-case class WithdrawalTransactionInfo(override val id: Uuid,
+case class WithdrawalTransactionInfo(override val id: Uuid = Info.randomUuid,
                                      from: Uuid,
                                      amount: BigDecimal,
                                      override val status: TransactionStatus.Value = TransactionStatus.CREATED,
@@ -52,7 +52,7 @@ case class WithdrawalTransactionInfo(override val id: Uuid,
   override val transactionType = TransactionType.WITHDRAWAL
 }
 
-case class TransferTransactionInfo(override val id: Uuid,
+case class TransferTransactionInfo(override val id: Uuid = Info.randomUuid,
                                    from: Uuid,
                                    to: Uuid,
                                    amount: BigDecimal,

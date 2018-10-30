@@ -33,7 +33,7 @@ class AccountServiceSpec extends FlatSpecLike with Matchers with BeforeAndAfterE
     }
   }
 
-  it should "return failure if specified account not found" in {
+  it should "return failure if specified account is not found" in {
     assert {
       accountService.getAccountInfo(Info.randomUuid) match {
         case Failure(NoSuchAccountException(_)) => true
