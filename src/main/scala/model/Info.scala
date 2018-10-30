@@ -75,7 +75,7 @@ object TransactionType extends Enumeration {
 object TransactionStatus extends Enumeration {
   val CREATED = Value
 
-  val ERROR = Value
+  val ERROR = Value //ToDo add explanation message
 
   val COMPLETED = Value
 
