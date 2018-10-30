@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.UUID
 
 import model.Info.Uuid
+import service.validator.Validator.uuidRegEx
 
 object Info {
   type Uuid = String
@@ -13,6 +14,8 @@ object Info {
 
 trait Info {
   val id: Uuid
+
+  require(id matches uuidRegEx, "Id should be valid UUID")
 }
 
 case class AccountInfo(override val id: Uuid, balance: BigDecimal = 0) extends Info
@@ -29,16 +32,23 @@ trait TransactionInfo extends Info {
 case class DepositTransactionInfo(override val id: Uuid,
                                   to: Uuid,
                                   amount: BigDecimal,
-                                  override val status: TransactionStatus.Value,
+                                  override val status: TransactionStatus.Value = TransactionStatus.CREATED,
                                   override val dateTime: Instant = Instant.now)  extends TransactionInfo {
+  require(id matches uuidRegEx)
+  require(to matches uuidRegEx)
+  require(amount > 0)
+
   override val transactionType = TransactionType.DEPOSIT
 }
 
 case class WithdrawalTransactionInfo(override val id: Uuid,
                                      from: Uuid,
                                      amount: BigDecimal,
-                                     override val status: TransactionStatus.Value,
+                                     override val status: TransactionStatus.Value = TransactionStatus.CREATED,
                                      override val dateTime: Instant = Instant.now)  extends TransactionInfo {
+  require(id matches uuidRegEx)
+  require(from matches uuidRegEx)
+  require(amount > 0)
   override val transactionType = TransactionType.WITHDRAWAL
 }
 
@@ -46,8 +56,13 @@ case class TransferTransactionInfo(override val id: Uuid,
                                    from: Uuid,
                                    to: Uuid,
                                    amount: BigDecimal,
-                                   override val status: TransactionStatus.Value,
+                                   override val status: TransactionStatus.Value = TransactionStatus.CREATED,
                                    override val dateTime: Instant = Instant.now)  extends TransactionInfo {
+  require(id matches uuidRegEx)
+  require(from matches uuidRegEx)
+  require(to matches uuidRegEx)
+  require(!from.equals(to))
+  require(amount > 0)
   override val transactionType = TransactionType.TRANSFER
 }
 

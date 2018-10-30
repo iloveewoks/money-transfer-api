@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import model.{AccountInfo, UpdateInfo}
 import model.Info.Uuid
 import service.AccountService
+import service.validator.Validator.uuidRegEx
 import service.validator.{InvalidUuidFormatException, NoSuchAccountException}
 
 import scala.util.{Failure, Success}
@@ -72,18 +73,26 @@ class AccountManager()(implicit val accountService: AccountService)
 
 
 object AccountManager {
-  case class GetAccountInfo(id: Uuid, transactionId: Option[Uuid] = None)
+  case class GetAccountInfo(id: Uuid, transactionId: Option[Uuid] = None) {
+    require(id matches uuidRegEx)
+  }
   case class AccountInfoMsg(info: AccountInfo, transactionId: Option[Uuid] = None)
   case class GetAllAccounts()
   case class AllAccountsInfo(accounts: Iterable[AccountInfo])
   case class CreateAccount()
-  case class UpdateAccount(newInfo: AccountInfo)
+  case class UpdateAccount(newInfo: AccountInfo) {
+    require(newInfo.id matches uuidRegEx)
+  }
   case class AccountUpdated(info: AccountInfo)
 
   trait Operation {
     val recipient: Uuid
     val transactionId: Uuid
     val amount: BigDecimal
+
+    require(recipient matches uuidRegEx)
+    require(transactionId matches uuidRegEx)
+    require(amount > 0)
   }
 
   case class Deposit(override val recipient: Uuid,

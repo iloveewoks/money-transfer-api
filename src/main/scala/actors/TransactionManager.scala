@@ -37,21 +37,21 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
       sender ! AllTransactionsInfo(transactionService findAll)
 
     case Valid(Deposit(to, amount)) =>
-      val transaction = DepositTransactionInfo(generateUuid, to, amount, TransactionStatus.CREATED)
+      val transaction = DepositTransactionInfo(generateUuid, to, amount)
       transactionService save transaction
       requests += transaction.id -> sender
       accountManager ! AccountManager.GetAccountInfo(to, Some(transaction.id))
       context.become(accountCheckContext)
 
     case Valid(Withdraw(from, amount)) =>
-      val transaction = WithdrawalTransactionInfo(generateUuid, from, amount, TransactionStatus.CREATED)
+      val transaction = WithdrawalTransactionInfo(generateUuid, from, amount)
       transactionService save transaction
       requests += transaction.id -> sender
       accountManager ! AccountManager.GetAccountInfo(from, Some(transaction.id))
       context.become(accountCheckContext)
 
     case Valid(Transfer(from, to, amount)) =>
-      val transaction = TransferTransactionInfo(generateUuid, from, to, amount, TransactionStatus.CREATED)
+      val transaction = TransferTransactionInfo(generateUuid, from, to, amount)
       transactionService save transaction
       requests += transaction.id -> sender
       accountManager ! AccountManager.GetAccountInfo(from, Some(transaction.id))
@@ -162,7 +162,9 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
 }
 
 object TransactionManager {
-  case class GetTransactionInfo(id: Uuid)
+  case class GetTransactionInfo(id: Uuid) {
+    require(id matches uuidRegEx)
+  }
   case class GetAllTransactions()
   case class AllTransactionsInfo(transactions: Iterable[TransactionInfo])
   case class NoSuchTransaction(ex: NoSuchTransactionException, id: Uuid)
