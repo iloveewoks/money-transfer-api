@@ -89,11 +89,12 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit object transactionFormat extends RootJsonFormat[TransactionInfo] {
     override def read(json: JsValue): TransactionInfo = {
-      json.asJsObject.fields.get("transactionType") match {
-        case Some(TransactionType.DEPOSIT) => depositTransactionInfoFormat.read(json)
-        case Some(TransactionType.WITHDRAWAL) => withdrawalTransactionInfoFormat.read(json)
-        case Some(TransactionType.TRANSFER) => transferTransactionInfoFormat.read(json)
-        case _ => deserializationError(s"Unknown transaction object: $json")
+      json.asJsObject.fields.get("type")
+        .map { t => TransactionType.withName(t.toString.replace("\"", "")) } match {
+          case Some(TransactionType.DEPOSIT) => depositTransactionInfoFormat.read(json)
+          case Some(TransactionType.WITHDRAWAL) => withdrawalTransactionInfoFormat.read(json)
+          case Some(TransactionType.TRANSFER) => transferTransactionInfoFormat.read(json)
+          case _ => deserializationError(s"Unknown transaction object: $json")
       }
     }
 
