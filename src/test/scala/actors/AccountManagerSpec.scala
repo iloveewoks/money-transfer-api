@@ -14,9 +14,9 @@ class AccountManagerSpec extends TestKit(ActorSystem("actor-test"))
 
   import AccountManager._
 
-  implicit var accountRepository = new AccountInMemoryRepository
-  implicit var accountService = new AccountService
-  var accountManager = system.actorOf(Props(new AccountManager()), "test-account-manager")
+  implicit val accountRepository = new AccountInMemoryRepository
+  implicit val accountService = new AccountService
+  val accountManager = system.actorOf(Props(new AccountManager()), "test-account-manager")
 
   override def afterAll(): Unit = TestKit.shutdownActorSystem(system)
 
@@ -51,7 +51,7 @@ class AccountManagerSpec extends TestKit(ActorSystem("actor-test"))
   }
 
   it should "respond with NoSuchAccount message if no account with specified id is found" in {
-    val randomId = Info.generateUuid
+    val randomId = Info.randomUuid
     accountManager ! GetAccountInfo(randomId)
 
     expectMsgPF() {
@@ -98,21 +98,21 @@ class AccountManagerSpec extends TestKit(ActorSystem("actor-test"))
     expectMsgPF() {
       case AccountInfo(baseId, baseBalance) =>
         val amount = 100
-        accountManager ! Deposit(baseId, Info.generateUuid, amount)
+        accountManager ! Deposit(baseId, Info.randomUuid, amount)
 
         expectMsgPF() {
           case DepositSuccess(_, AccountInfo(depositId, depositBalance))
             if depositId == baseId
               && depositBalance == baseBalance + amount =>
 
-            accountManager ! Withdraw(baseId, Info.generateUuid, amount)
+            accountManager ! Withdraw(baseId, Info.randomUuid, amount)
 
             expectMsgPF() {
               case WithdrawalSuccess(_, AccountInfo(withdrawalId, withdrawalBalance))
                 if withdrawalId == baseId
                   && withdrawalBalance == baseBalance =>
 
-                val trId = Info.generateUuid
+                val trId = Info.randomUuid
                 accountManager ! Withdraw(baseId, trId, amount)
 
                 expectMsg(InsufficientFunds(trId, AccountInfo(baseId, baseBalance)))

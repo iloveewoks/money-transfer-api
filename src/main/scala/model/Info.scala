@@ -9,7 +9,7 @@ import service.validator.Validator.uuidRegEx
 object Info {
   type Uuid = String
 
-  def generateUuid: Uuid = UUID.randomUUID().toString
+  def randomUuid: Uuid = UUID.randomUUID().toString
 }
 
 trait Info {
@@ -18,7 +18,7 @@ trait Info {
   require(id matches uuidRegEx, "Id should be valid UUID")
 }
 
-case class AccountInfo(override val id: Uuid = Info.generateUuid, balance: BigDecimal = 0) extends Info
+case class AccountInfo(override val id: Uuid = Info.randomUuid, balance: BigDecimal = 0) extends Info
 
 trait UpdateInfo[T] {
   def info: T

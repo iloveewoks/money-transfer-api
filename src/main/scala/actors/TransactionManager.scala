@@ -6,7 +6,7 @@ import actors.AccountManager.InvalidUuidFormat
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import cats.data.Validated.Valid
 import cats.implicits._
-import model.Info.{Uuid, generateUuid}
+import model.Info.{Uuid, randomUuid}
 import model._
 import service.TransactionService
 import service.validator.Validator.{ValidationResult, uuidRegEx}
@@ -39,21 +39,21 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
       sender ! AllTransactionsInfo(transactionService.findAll(_.dateTime)(Ordering[Instant].reverse))
 
     case Valid(Deposit(to, amount)) =>
-      val transaction = DepositTransactionInfo(generateUuid, to, amount)
+      val transaction = DepositTransactionInfo(randomUuid, to, amount)
       transactionService save transaction
       requests += transaction.id -> sender
       accountManager ! AccountManager.GetAccountInfo(to, Some(transaction.id))
       context.become(accountCheckContext)
 
     case Valid(Withdraw(from, amount)) =>
-      val transaction = WithdrawalTransactionInfo(generateUuid, from, amount)
+      val transaction = WithdrawalTransactionInfo(randomUuid, from, amount)
       transactionService save transaction
       requests += transaction.id -> sender
       accountManager ! AccountManager.GetAccountInfo(from, Some(transaction.id))
       context.become(accountCheckContext)
 
     case Valid(Transfer(from, to, amount)) =>
-      val transaction = TransferTransactionInfo(generateUuid, from, to, amount)
+      val transaction = TransferTransactionInfo(randomUuid, from, to, amount)
       transactionService save transaction
       requests += transaction.id -> sender
       accountManager ! AccountManager.GetAccountInfo(from, Some(transaction.id))

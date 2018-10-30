@@ -25,7 +25,7 @@ class AccountSpec extends TestKit(ActorSystem("actor-test"))
   it should "be debited for specified amount" in {
     val info = AccountInfo()
     val accountActor = system.actorOf(Props(new Account(info, self)), info.id)
-    val transactionId = Info.generateUuid
+    val transactionId = Info.randomUuid
 
     accountActor ! AccountManager.Deposit(info.id, transactionId, 100)
 
@@ -42,7 +42,7 @@ class AccountSpec extends TestKit(ActorSystem("actor-test"))
   it should "not withdraw money if the balance is insufficient" in {
     val info = AccountInfo()
     val accountActor = system.actorOf(Props(new Account(info, self)), info.id)
-    val transactionId = Info.generateUuid
+    val transactionId = Info.randomUuid
 
     accountActor ! AccountManager.Withdraw(info.id, transactionId, 100)
 
@@ -59,7 +59,7 @@ class AccountSpec extends TestKit(ActorSystem("actor-test"))
   it should "withdraw specified amount if the balance is sufficient" in {
     val info = AccountInfo(balance = 100)
     val accountActor = system.actorOf(Props(new Account(info, self)), info.id)
-    val transactionId = Info.generateUuid
+    val transactionId = Info.randomUuid
     val amount = 50
 
     accountActor ! AccountManager.Withdraw(info.id, transactionId, amount)
