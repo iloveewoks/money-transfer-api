@@ -16,15 +16,14 @@ import model._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-class Server(interface: String, port: Int,
-             accountManager: ActorRef,
-             transactionManager: ActorRef)(implicit actorSystem: ActorSystem) extends JsonSupport {
-
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
-  implicit val executionContext: ExecutionContextExecutor = actorSystem.dispatcher
-
+trait RestService extends JsonSupport {
+  implicit val actorSystem: ActorSystem
+  implicit val materializer: ActorMaterializer
+  implicit val executionContext: ExecutionContextExecutor
   implicit val timeout: Timeout = 150.seconds
 
+  val accountManager: ActorRef
+  val transactionManager: ActorRef
 
   val accountsPrefix = "accounts"
   val accountsRoute =
@@ -35,24 +34,24 @@ class Server(interface: String, port: Int,
         }
       }
     } ~
-    path(accountsPrefix) {
-      post {
-        onSuccess(accountManager ? AccountManager.CreateAccount) {
-          case info @ AccountInfo(_, _) => complete(info)
+      path(accountsPrefix) {
+        post {
+          onSuccess(accountManager ? AccountManager.CreateAccount) {
+            case info @ AccountInfo(_, _) => complete(info)
+          }
         }
-      }
-    } ~
-    pathPrefix(accountsPrefix) {
-      path(JavaUUID) { id =>
-        get {
-          onSuccess(accountManager ? AccountManager.GetAccountInfo(id.toString)) {
-            case AccountManager.AccountInfoMsg(info, _) => complete(info)
-            case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
-            case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
+      } ~
+      pathPrefix(accountsPrefix) {
+        path(JavaUUID) { id =>
+          get {
+            onSuccess(accountManager ? AccountManager.GetAccountInfo(id.toString)) {
+              case AccountManager.AccountInfoMsg(info, _) => complete(info)
+              case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
+              case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
+            }
           }
         }
       }
-    }
 
   val transactionsPrefix = "transactions"
   val transactionsRoute =
@@ -63,31 +62,31 @@ class Server(interface: String, port: Int,
         }
       }
     } ~
-    pathPrefix(transactionsPrefix) {
-      path(JavaUUID) {id =>
-        get {
-          onSuccess(transactionManager ? TransactionManager.GetTransactionInfo(id.toString)) {
-            case info: TransactionInfo => complete(info)
-            case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
-            case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
-          }
-        }
-      }
-    } ~
-    pathPrefix(transactionsPrefix) {
-      path("deposit") {
-        post {
-          entity(as[Valid[TransactionManager.Deposit]]) { deposit =>
-            onSuccess(transactionManager ? deposit) {
-              case TransactionManager.TransactionCompleted(transaction) => complete(transaction)
+      pathPrefix(transactionsPrefix) {
+        path(JavaUUID) {id =>
+          get {
+            onSuccess(transactionManager ? TransactionManager.GetTransactionInfo(id.toString)) {
+              case info: TransactionInfo => complete(info)
               case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
-              case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
               case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
             }
           }
         }
-      }
-    } ~
+      } ~
+      pathPrefix(transactionsPrefix) {
+        path("deposit") {
+          post {
+            entity(as[Valid[TransactionManager.Deposit]]) { deposit =>
+              onSuccess(transactionManager ? deposit) {
+                case TransactionManager.TransactionCompleted(transaction) => complete(transaction)
+                case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
+                case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
+                case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
+              }
+            }
+          }
+        }
+      } ~
       pathPrefix(transactionsPrefix) {
         path("withdraw") {
           post {
@@ -121,9 +120,21 @@ class Server(interface: String, port: Int,
         }
       }
 
+  val route = accountsRoute ~ transactionsRoute
+}
 
-  private val binding: Future[ServerBinding] =
-    Http().bindAndHandle(accountsRoute ~ transactionsRoute, interface, port)
+class Server(override val accountManager: ActorRef,
+             override val transactionManager: ActorRef)
+            (implicit val actorSystem: ActorSystem,
+             implicit val materializer: ActorMaterializer,
+             implicit val executionContext: ExecutionContextExecutor) extends RestService {
+
+  private var binding: Future[ServerBinding] = Future.never
+
+  def start(interface: String, port: Int): Unit = {
+    stop
+    binding = Http().bindAndHandle(route, interface, port)
+  }
 
   def stop: Future[Done] = binding.flatMap(_.unbind())
 
