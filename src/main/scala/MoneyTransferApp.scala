@@ -18,13 +18,6 @@ object MoneyTransferApp extends App {
   implicit val transactionService: TransactionService = new TransactionService
   val transactionManager = system.actorOf(Props(new TransactionManager(accountManager)), "transaction-manager")
 
-  val route =
-    path("hello") {
-      get {
-        complete("Hello, World!")
-      }
-    }
-
   val interface = "localhost"
   val port = 8080
   val server = new Server(interface, port, accountManager, transactionManager)

@@ -5,65 +5,15 @@ import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
 import akka.pattern._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import model._
-import spray.json._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
-
-trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
-  class EnumerationFormat[A](enum: Enumeration) extends RootJsonFormat[A] {
-    def write(obj: A): JsValue = JsString(obj.toString)
-
-    def read(json: JsValue): A = json match {
-      case JsString(str) => enum.withName(str).asInstanceOf[A]
-      case x => throw new RuntimeException(s"unknown enumeration value: $x")
-    }
-  }
-
-  implicit object transactionStatusFormat extends EnumerationFormat[TransactionStatus.Value](TransactionStatus)
-  implicit object transactionTypeFormat extends EnumerationFormat[TransactionType.Value](TransactionType)
-  implicit val accountInfoFormat = jsonFormat2(AccountInfo)
-  implicit val depositTransactionInfoFormat = jsonFormat4(DepositTransactionInfo)
-  implicit val withdrawalTransactionInfoFormat = jsonFormat4(WithdrawalTransactionInfo)
-  implicit val transferTransactionInfoFormat = jsonFormat5(TransferTransactionInfo)
-  implicit val depositCommandFormat = jsonFormat2(TransactionManager.Deposit)
-  implicit val withdrawalCommandFormat = jsonFormat2(TransactionManager.Withdraw)
-  implicit val transferCommandFormat = jsonFormat3(TransactionManager.Transfer)
-
-  implicit val transactionFormat = new RootJsonFormat[TransactionInfo] {
-    override def read(json: JsValue): TransactionInfo = {
-      val jsonObject = json.asJsObject
-      jsonObject.fields.get("to") match {
-        case Some(_) =>
-          jsonObject.fields.get("from") match {
-            case Some(_) => transferTransactionInfoFormat.read(json)
-            case None => depositTransactionInfoFormat.read(json)
-          }
-
-        case None =>
-          jsonObject.fields.get("from") match {
-            case Some(_) => withdrawalTransactionInfoFormat.read(json)
-            case None => deserializationError(s"Unknown transaction object: $json")
-          }
-      }
-    }
-
-    override def write(obj: TransactionInfo): JsValue = obj match {
-      case deposit: DepositTransactionInfo => depositTransactionInfoFormat.write(deposit)
-      case withdrawal: WithdrawalTransactionInfo => withdrawalTransactionInfoFormat.write(withdrawal)
-      case transfer: TransferTransactionInfo => transferTransactionInfoFormat.write(transfer)
-    }
-  }
-
-}
 
 class Server(interface: String, port: Int,
              accountManager: ActorRef,
@@ -74,13 +24,6 @@ class Server(interface: String, port: Int,
 
   implicit val timeout: Timeout = 150.seconds
 
-
-  val route: Route =
-    path("hello") {
-      get {
-        complete("Hello, World!")
-      }
-    }
 
   val accountsPrefix = "accounts"
   val accountsRoute =
@@ -176,7 +119,7 @@ class Server(interface: String, port: Int,
 
 
   private val binding: Future[ServerBinding] =
-    Http().bindAndHandle(route ~ accountsRoute ~ transactionsRoute, interface, port)
+    Http().bindAndHandle(accountsRoute ~ transactionsRoute, interface, port)
 
   def stop: Future[Done] = binding.flatMap(_.unbind())
 
