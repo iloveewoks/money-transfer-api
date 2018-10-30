@@ -18,7 +18,7 @@ trait Info {
   require(id matches uuidRegEx, "Id should be valid UUID")
 }
 
-case class AccountInfo(override val id: Uuid, balance: BigDecimal = 0) extends Info
+case class AccountInfo(override val id: Uuid = Info.generateUuid, balance: BigDecimal = 0) extends Info
 
 trait UpdateInfo[T] {
   def info: T
