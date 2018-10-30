@@ -1,7 +1,7 @@
 package service
 
 import model.Info.Uuid
-import model.TransactionInfo
+import model._
 import repository.TransactionRepository
 import service.validator.{InvalidUuidFormatException, NoSuchTransactionException}
 import service.validator.Validator.uuidRegEx
@@ -25,6 +25,19 @@ class TransactionService()(implicit val transactionRepository: TransactionReposi
 
   def updateTransaction(newTransactionInfo: TransactionInfo): Try[TransactionInfo] =
     getTransactionInfo(newTransactionInfo.id) map { _ => transactionRepository.update(newTransactionInfo) }
+
+  def updateTransactionStatus(id: Uuid, newStatus: TransactionStatus.Value): Try[TransactionInfo] =
+    getTransactionInfo(id) map {
+      case info: DepositTransactionInfo =>
+        transactionRepository.update(info.copy(status = newStatus))
+
+      case info: WithdrawalTransactionInfo =>
+        transactionRepository.update(info.copy(status = newStatus))
+
+      case info: TransferTransactionInfo =>
+        transactionRepository.update(info.copy(status = newStatus))
+    }
+
 
 
 }

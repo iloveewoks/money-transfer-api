@@ -18,13 +18,13 @@ class AccountManager()(implicit val accountService: AccountService)
     case CreateAccount =>
       sender ! accountService.createAccount
 
-    case GetAccountInfo(id) =>
+    case GetAccountInfo(id, transactionId) =>
       accountService getAccountInfo id match {
-        case Success(info) => sender ! info
+        case Success(info) => sender ! AccountInfoMsg(info, transactionId)
 
-        case Failure(ex: InvalidUuidFormatException) => sender ! InvalidUuidFormat(ex, id)
+        case Failure(ex: InvalidUuidFormatException) => sender ! InvalidUuidFormat(ex, id, transactionId)
 
-        case Failure(ex: NoSuchAccountException) => sender ! NoSuchAccount(ex, id)
+        case Failure(ex: NoSuchAccountException) => sender ! NoSuchAccount(ex, id, transactionId)
       }
 
     case GetAllAccounts =>
@@ -72,7 +72,8 @@ class AccountManager()(implicit val accountService: AccountService)
 
 
 object AccountManager {
-  case class GetAccountInfo(id: Uuid)
+  case class GetAccountInfo(id: Uuid, transactionId: Option[Uuid] = None)
+  case class AccountInfoMsg(info: AccountInfo, transactionId: Option[Uuid] = None)
   case class GetAllAccounts()
   case class AllAccountsInfo(accounts: Iterable[AccountInfo])
   case class CreateAccount()

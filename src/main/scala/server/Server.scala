@@ -45,7 +45,7 @@ class Server(interface: String, port: Int,
       path(JavaUUID) { id =>
         get {
           onSuccess(accountManager ? AccountManager.GetAccountInfo(id.toString)) {
-            case info @ AccountInfo(_, _) => complete(info)
+            case AccountManager.AccountInfoMsg(info, _) => complete(info)
             case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
             case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
           }
@@ -80,6 +80,7 @@ class Server(interface: String, port: Int,
             onSuccess(transactionManager ? deposit) {
               case TransactionManager.TransactionCompleted(transaction) => complete(transaction)
               case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
+              case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
               case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
             }
           }
@@ -95,6 +96,7 @@ class Server(interface: String, port: Int,
                 case AccountManager.InsufficientFunds(transactionId, accountInfo) =>
                   complete(StatusCodes.BadRequest, s"Not enough funds on account $accountInfo during transaction $transactionId")
                 case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
+                case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
                 case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
               }
             }
@@ -110,6 +112,7 @@ class Server(interface: String, port: Int,
                 case AccountManager.InsufficientFunds(transactionId, accountInfo) =>
                   complete(StatusCodes.BadRequest, s"Not enough funds on account $accountInfo during transaction $transactionId")
                 case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
+                case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
                 case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
               }
             }

@@ -18,7 +18,9 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
 
   var requests: mutable.Map[Uuid, ActorRef] = mutable.Map[Uuid, ActorRef]()
 
-  override def receive: Receive = {
+  override def receive: Receive = mainContext
+
+  private def mainContext: Receive = {
     case GetTransactionInfo(id) =>
       transactionService getTransactionInfo id match {
         case Success(info) => sender ! info
@@ -35,19 +37,22 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
       val transaction = DepositTransactionInfo(generateUuid, to, amount, TransactionStatus.CREATED)
       transactionService save transaction
       requests += transaction.id -> sender
-      accountManager ! AccountManager.Deposit(to, transaction.id, amount)
+      accountManager ! AccountManager.GetAccountInfo(to, Some(transaction.id))
+      context.become(accountCheckContext)
 
     case Withdraw(from, amount) =>
       val transaction = WithdrawalTransactionInfo(generateUuid, from, amount, TransactionStatus.CREATED)
       transactionService save transaction
       requests += transaction.id -> sender
-      accountManager ! AccountManager.Withdraw(from, transaction.id, amount)
+      accountManager ! AccountManager.GetAccountInfo(from, Some(transaction.id))
+      context.become(accountCheckContext)
 
     case Transfer(from, to, amount) =>
       val transaction = TransferTransactionInfo(generateUuid, from, to, amount, TransactionStatus.CREATED)
       transactionService save transaction
       requests += transaction.id -> sender
-      accountManager ! AccountManager.Withdraw(from, transaction.id, amount)
+      accountManager ! AccountManager.GetAccountInfo(from, Some(transaction.id))
+      context.become(accountCheckContext)
 
     case AccountManager.DepositSuccess(transactionId, _) =>
       processRequest(transactionId,
@@ -74,7 +79,7 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
         }
       )
 
-    case AccountManager.WithdrawalSuccess(transactionId, info) =>
+    case AccountManager.WithdrawalSuccess(transactionId, _) =>
       processRequest(transactionId,
         { requester =>
           transactionService.getTransactionInfo(transactionId) match {
@@ -98,75 +103,48 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
       )
 
     case msg @ AccountManager.InsufficientFunds(transactionId, accountInfo) =>
-      processRequest(transactionId,
-        { requester =>
-          transactionService getTransactionInfo transactionId match {
-            case Success(transaction: WithdrawalTransactionInfo) =>
-              transactionService updateTransaction transaction.copy(status = TransactionStatus.ERROR)
+      processRequest(transactionId, { _ forward msg})
+      transactionService.updateTransactionStatus(transactionId, TransactionStatus.ERROR)
 
-              requester ! msg
+    case msg @ AccountManager.NoSuchAccount(_, _, Some(transactionId)) =>
+      processRequest(transactionId, { _ forward msg })
+      transactionService.updateTransactionStatus(transactionId, TransactionStatus.ERROR)
 
-            case Success(transaction: TransferTransactionInfo) =>
-              transactionService updateTransaction transaction.copy(status = TransactionStatus.ERROR)
 
-              requester ! msg
+    case msg @ AccountManager.InvalidUuidFormat(_, _, Some(transactionId)) =>
+      processRequest(transactionId, { _ forward msg })
+      transactionService.updateTransactionStatus(transactionId, TransactionStatus.ERROR)
 
-            case Failure(ex: InvalidUuidFormatException) => requester ! InvalidUuidFormat(ex, transactionId)
+  }
 
-            case Failure(ex: NoSuchTransactionException) => requester ! NoSuchTransaction(ex, transactionId)
-          }
-        }
-      )
+  private def accountCheckContext: Receive = {
+    case AccountManager.AccountInfoMsg(accountInfo, Some(transactionId)) =>
+      transactionService getTransactionInfo transactionId match {
+        case Success(DepositTransactionInfo(_, to, amount, _, _)) =>
+          accountManager ! AccountManager.Deposit(to, transactionId, amount)
+          context.become(mainContext)
 
-    case msg @ AccountManager.NoSuchAccount(_, _, transactionIdOp) =>
-      transactionIdOp match {
-        case Some(transactionId) =>
-          processRequest(transactionId,
-            { requester =>
-              transactionService getTransactionInfo transactionId match {
-                case Success(transaction: WithdrawalTransactionInfo) =>
-                  transactionService updateTransaction transaction.copy(status = TransactionStatus.ERROR)
+        case Success(WithdrawalTransactionInfo(_, from, amount, _, _)) =>
+          accountManager ! AccountManager.Withdraw(from, transactionId, amount)
+          context.become(mainContext)
 
-                  requester ! msg
+        case Success(TransferTransactionInfo(_, from, to, _, _, _)) if from equals accountInfo.id =>
+          accountManager ! AccountManager.GetAccountInfo(to, Some(transactionId))
 
-                case Success(transaction: TransferTransactionInfo) =>
-                  transactionService updateTransaction transaction.copy(status = TransactionStatus.ERROR)
-
-                  requester ! msg
-
-                case Failure(ex: InvalidUuidFormatException) => requester ! InvalidUuidFormat(ex, transactionId)
-
-                case Failure(ex: NoSuchTransactionException) => requester ! NoSuchTransaction(ex, transactionId)
-              }
-            }
-          )
+        case Success(TransferTransactionInfo(_, from, _, amount, _, _)) =>
+          accountManager ! AccountManager.Withdraw(from, transactionId, amount)
+          context.become(mainContext)
       }
 
-    case msg @ AccountManager.InvalidUuidFormat(_, _, transactionIdOp) =>
-      transactionIdOp match {
-        case Some(transactionId) =>
-          processRequest(transactionId,
-            { requester =>
-              transactionService getTransactionInfo transactionId match {
-                case Success(transaction: WithdrawalTransactionInfo) =>
-                  transactionService updateTransaction transaction.copy(status = TransactionStatus.ERROR)
+    case msg @ InvalidUuidFormat(_, _, Some(transactionId)) =>
+      processRequest(transactionId, { _ forward msg })
+      transactionService.updateTransactionStatus(transactionId, TransactionStatus.ERROR)
+      context.become(mainContext)
 
-                  requester ! msg
-
-                case Success(transaction: TransferTransactionInfo) =>
-                  transactionService updateTransaction transaction.copy(status = TransactionStatus.ERROR)
-
-                  requester ! msg
-
-                case Failure(ex: InvalidUuidFormatException) => requester ! InvalidUuidFormat(ex, transactionId)
-
-                case Failure(ex: NoSuchTransactionException) => requester ! NoSuchTransaction(ex, transactionId)
-              }
-            }
-          )
-      }
-
-
+    case msg @ AccountManager.NoSuchAccount(_, _, Some(transactionId)) =>
+      processRequest(transactionId, { _ forward msg })
+      transactionService.updateTransactionStatus(transactionId, TransactionStatus.ERROR)
+      context.become(mainContext)
   }
 
   private def processRequest(transactionId: Uuid, callback: ActorRef => Unit): Unit =
