@@ -3,7 +3,7 @@ package actors
 import actors.AccountManager.NoSuchAccount
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import model._
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpecLike, Matchers}
 import repository.{AccountInMemoryRepository, TransactionInMemoryRepository}
@@ -172,48 +172,69 @@ class TransactionManagerSpec extends TestKit(ActorSystem("actor-test"))
   }
 
   it should "accept only valid operations" in {
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Deposit("", 100))
+
+    transactionManager ! Deposit("", 100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Deposit("142124", 100))
+
+    transactionManager ! Deposit("142124", 100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Deposit(Info.randomUuid, -100))
+
+    transactionManager ! Deposit(Info.randomUuid, -100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Withdraw("", 100))
+
+    transactionManager ! Withdraw("", 100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Withdraw("142124", 100))
+
+    transactionManager ! Withdraw("142124", 100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Withdraw(Info.randomUuid, -100))
+
+    transactionManager ! Withdraw(Info.randomUuid, -100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Transfer(Info.randomUuid, "", 100))
+
+    transactionManager ! Transfer(Info.randomUuid, "", 100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Transfer(Info.randomUuid, "12414", 100))
+
+    transactionManager ! Transfer(Info.randomUuid, "12414", 100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Transfer("", Info.randomUuid, 100))
+
+    transactionManager ! Transfer("", Info.randomUuid, 100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Transfer("12414", Info.randomUuid, 100))
+
+    transactionManager ! Transfer("12414", Info.randomUuid, 100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
-    intercept[IllegalArgumentException] {
-      transactionManager ! Valid(Transfer(Info.randomUuid, Info.randomUuid, -100))
+    transactionManager ! Transfer(Info.randomUuid, Info.randomUuid, -100).validate
+    expectMsgPF() {
+      case _: Invalid[IllegalArgumentException] =>
     }
 
   }

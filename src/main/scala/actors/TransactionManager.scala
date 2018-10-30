@@ -4,7 +4,7 @@ import java.time.Instant
 
 import actors.AccountManager.InvalidUuidFormat
 import akka.actor.{Actor, ActorLogging, ActorRef}
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
 import model.Info.{Uuid, randomUuid}
 import model._
@@ -58,6 +58,9 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
       requests += transaction.id -> sender
       accountManager ! AccountManager.GetAccountInfo(from, Some(transaction.id))
       context.become(accountCheckContext)
+
+    case invalid @ Invalid(_) =>
+      sender ! invalid
 
     case AccountManager.DepositSuccess(transactionId, _) =>
       processRequest(transactionId,
