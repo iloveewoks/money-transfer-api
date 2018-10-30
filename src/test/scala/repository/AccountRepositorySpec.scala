@@ -14,7 +14,6 @@ class AccountRepositorySpec extends FlatSpecLike with Matchers with BeforeAndAft
       accountRepository.createAccount match {
         case AccountInfo(id, balance) =>
           id.matches(uuidRegEx) && balance == 0
-        case _ => false
       }
     }
   }
@@ -53,7 +52,7 @@ class AccountRepositorySpec extends FlatSpecLike with Matchers with BeforeAndAft
   }
 
   it should "update account" in {
-    val account = AccountInfo()
+    val account = accountRepository createAccount
     val newBalance = 100
 
     accountRepository update account.copy(balance = newBalance)
@@ -61,7 +60,6 @@ class AccountRepositorySpec extends FlatSpecLike with Matchers with BeforeAndAft
     assert {
       accountRepository.findById(account.id) match {
         case Some(AccountInfo(_, balance)) => balance == newBalance
-        case _ => false
       }
     }
   }
