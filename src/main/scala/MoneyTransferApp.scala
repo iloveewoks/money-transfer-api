@@ -1,6 +1,5 @@
 import actors.{AccountManager, TransactionManager}
 import akka.actor.{ActorSystem, Props}
-import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import repository.{AccountInMemoryRepository, AccountRepository, TransactionInMemoryRepository, TransactionRepository}
 import server.Server
@@ -22,7 +21,7 @@ object MoneyTransferApp extends App {
 
   val interface = "localhost"
   val port = 8080
-  val server = new Server(accountManager, transactionManager)
+  val server = new Server(interface, port, accountManager, transactionManager)
 
   Future {
     println(s"\nServer online at http://$interface:$port/\nPress Enter to stop...\n")

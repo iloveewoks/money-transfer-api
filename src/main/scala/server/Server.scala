@@ -123,18 +123,14 @@ trait RestService extends JsonSupport {
   val route = accountsRoute ~ transactionsRoute
 }
 
-class Server(override val accountManager: ActorRef,
+class Server(interface: String, port: Int,
+             override val accountManager: ActorRef,
              override val transactionManager: ActorRef)
             (implicit val actorSystem: ActorSystem,
              implicit val materializer: ActorMaterializer,
              implicit val executionContext: ExecutionContextExecutor) extends RestService {
 
-  private var binding: Future[ServerBinding] = Future.never
-
-  def start(interface: String, port: Int): Unit = {
-    stop
-    binding = Http().bindAndHandle(route, interface, port)
-  }
+  private val binding = Http().bindAndHandle(route, interface, port)
 
   def stop: Future[Done] = binding.flatMap(_.unbind())
 
