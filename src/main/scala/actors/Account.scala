@@ -39,7 +39,7 @@ class Account(var info: AccountInfo, accountManager: ActorRef)
 
     case Withdraw(_, transactionId, amount)  =>
       persist(WithdrawalSuccess(transactionId, info.copy(balance = info.balance - amount))) { withdrawalSuccess =>
-        log.debug("Withdrawed {} from account {} during transaction {}", amount, info.id, transactionId)
+        log.debug("Withdrawn {} from account {} during transaction {}", amount, info.id, transactionId)
         info = info.copy(balance = info.balance - amount)
         accountManager ! UpdateAccount(info)
         sender ! withdrawalSuccess

@@ -21,6 +21,12 @@ class TransactionService()(implicit val transactionRepository: TransactionReposi
 
   def findAll: Iterable[TransactionInfo] = transactionRepository findAll
 
+  def findAll(sortWith: (TransactionInfo, TransactionInfo) => Boolean): Iterable[TransactionInfo] =
+    transactionRepository findAll sortWith
+
+  def findAll[B](sortBy: TransactionInfo => B)(implicit ordering: Ordering[B]): Iterable[TransactionInfo] =
+    transactionRepository findAll sortBy
+
   def save(transaction: TransactionInfo): TransactionInfo = transactionRepository save transaction
 
   def updateTransaction(newTransactionInfo: TransactionInfo): Try[TransactionInfo] =

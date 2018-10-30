@@ -1,5 +1,7 @@
 package actors
 
+import java.time.Instant
+
 import actors.AccountManager.InvalidUuidFormat
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import cats.data.Validated.Valid
@@ -34,7 +36,7 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
       }
 
     case GetAllTransactions =>
-      sender ! AllTransactionsInfo(transactionService findAll)
+      sender ! AllTransactionsInfo(transactionService.findAll(_.dateTime)(Ordering[Instant].reverse))
 
     case Valid(Deposit(to, amount)) =>
       val transaction = DepositTransactionInfo(generateUuid, to, amount)
