@@ -10,6 +10,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.pattern._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import cats.data.Validated.Valid
 import model._
 
 import scala.concurrent.duration._
@@ -76,7 +77,7 @@ class Server(interface: String, port: Int,
     pathPrefix(transactionsPrefix) {
       path("deposit") {
         post {
-          entity(as[TransactionManager.Deposit]) { deposit =>
+          entity(as[Valid[TransactionManager.Deposit]]) { deposit =>
             onSuccess(transactionManager ? deposit) {
               case TransactionManager.TransactionCompleted(transaction) => complete(transaction)
               case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
@@ -90,7 +91,7 @@ class Server(interface: String, port: Int,
       pathPrefix(transactionsPrefix) {
         path("withdraw") {
           post {
-            entity(as[TransactionManager.Withdraw]) { withdraw =>
+            entity(as[Valid[TransactionManager.Withdraw]]) { withdraw =>
               onSuccess(transactionManager ? withdraw) {
                 case TransactionManager.TransactionCompleted(transaction) => complete(transaction)
                 case AccountManager.InsufficientFunds(transactionId, accountInfo) =>
@@ -106,7 +107,7 @@ class Server(interface: String, port: Int,
       pathPrefix(transactionsPrefix) {
         path("transfer") {
           post {
-            entity(as[TransactionManager.Transfer]) { transfer =>
+            entity(as[Valid[TransactionManager.Transfer]]) { transfer =>
               onSuccess(transactionManager ? transfer) {
                 case TransactionManager.TransactionCompleted(transaction) => complete(transaction)
                 case AccountManager.InsufficientFunds(transactionId, accountInfo) =>

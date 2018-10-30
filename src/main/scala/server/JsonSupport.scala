@@ -4,8 +4,13 @@ import java.time.Instant
 
 import actors.TransactionManager
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.unmarshalling.FromRequestUnmarshaller
+import cats.data.Validated.{Invalid, Valid}
 import model._
+import service.validator.Validatable
 import spray.json.{DefaultJsonProtocol, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, deserializationError}
+
+import scala.concurrent.Future
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   class EnumerationFormat[A](enum: Enumeration) extends RootJsonFormat[A] {
@@ -98,5 +103,17 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
       case transfer: TransferTransactionInfo => transferTransactionInfoFormat.write(transfer)
     }
   }
+
+  implicit def validatedEntityUnmarshaller[A <: Validatable[A]]
+    (implicit um: FromRequestUnmarshaller[A]): FromRequestUnmarshaller[Valid[A]] =
+    um.flatMap { _ => _ => entity =>
+      entity.validate match {
+        case v @ Valid(_) =>
+          Future.successful(v)
+        case Invalid(failures) =>
+          val message = failures.toList.map(_.message).mkString(";\n")
+          Future.failed(new IllegalArgumentException(message))
+      }
+    }
 
 }
