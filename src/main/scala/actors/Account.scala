@@ -4,6 +4,7 @@ import actors.AccountManager._
 import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence.PersistentActor
 import model.{AccountInfo, UpdateInfo}
+import service.validator.InsufficientFundsException
 
 class Account(var info: AccountInfo, accountManager: ActorRef)
   extends PersistentActor
@@ -35,7 +36,7 @@ class Account(var info: AccountInfo, accountManager: ActorRef)
 
     case Withdraw(_, transactionId, amount) if amount > info.balance =>
       log.debug("Cannot withdraw {} from {} during transaction {}", amount, info, transactionId)
-      sender ! InsufficientFunds(transactionId, info)
+      sender ! InsufficientFunds(InsufficientFundsException(info, transactionId), transactionId, info)
 
     case Withdraw(_, transactionId, amount)  =>
       persist(WithdrawalSuccess(transactionId, info.copy(balance = info.balance - amount))) { withdrawalSuccess =>

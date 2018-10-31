@@ -14,9 +14,9 @@ class TransactionService()(implicit val transactionRepository: TransactionReposi
     if (id matches uuidRegEx) {
       transactionRepository.findById(id) match {
         case Some(info) => Success(info)
-        case None => Failure(NoSuchTransactionException(s"Transaction with UUID $id not found"))
+        case None => Failure(NoSuchTransactionException(id))
       }
-    } else Failure(InvalidUuidFormatException(s"UUID $id is invalid"))
+    } else Failure(InvalidUuidFormatException(id))
   }
 
   def findAll: Iterable[TransactionInfo] = transactionRepository findAll

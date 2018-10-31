@@ -51,7 +51,7 @@ class AccountSpec extends TestKit(ActorSystem("actor-test"))
     }
 
     expectMsgPF() {
-      case AccountManager.InsufficientFunds(trId, AccountInfo(id, balance))
+      case AccountManager.InsufficientFunds(_, trId, AccountInfo(id, balance))
         if transactionId == trId && info.id == id && balance == info.balance =>
     }
   }

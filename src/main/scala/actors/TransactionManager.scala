@@ -6,7 +6,7 @@ import actors.AccountManager.InvalidUuidFormat
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
-import model.Info.{Uuid, randomUuid}
+import model.Info.Uuid
 import model._
 import service.TransactionService
 import service.validator.Validator.{ValidationResult, uuidRegEx}
@@ -38,25 +38,25 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
     case GetAllTransactions =>
       sender ! AllTransactionsInfo(transactionService.findAll(_.dateTime)(Ordering[Instant].reverse))
 
-    case Valid(Deposit(to, amount)) =>
-      val transaction = DepositTransactionInfo(randomUuid, to, amount)
+    case Valid(Deposit(toId, amnt)) =>
+      val transaction = DepositTransactionInfo(to = toId, amount = amnt)
       transactionService save transaction
       requests += transaction.id -> sender
-      accountManager ! AccountManager.GetAccountInfo(to, Some(transaction.id))
+      accountManager ! AccountManager.GetAccountInfo(toId, Some(transaction.id))
       context.become(accountCheckContext)
 
-    case Valid(Withdraw(from, amount)) =>
-      val transaction = WithdrawalTransactionInfo(randomUuid, from, amount)
+    case Valid(Withdraw(fromId, amnt)) =>
+      val transaction = WithdrawalTransactionInfo(from = fromId, amount = amnt)
       transactionService save transaction
       requests += transaction.id -> sender
-      accountManager ! AccountManager.GetAccountInfo(from, Some(transaction.id))
+      accountManager ! AccountManager.GetAccountInfo(fromId, Some(transaction.id))
       context.become(accountCheckContext)
 
-    case Valid(Transfer(from, to, amount)) =>
-      val transaction = TransferTransactionInfo(randomUuid, from, to, amount)
+    case Valid(Transfer(fromId, toId, amnt)) =>
+      val transaction = TransferTransactionInfo(from = fromId, to = toId, amount = amnt)
       transactionService save transaction
       requests += transaction.id -> sender
-      accountManager ! AccountManager.GetAccountInfo(from, Some(transaction.id))
+      accountManager ! AccountManager.GetAccountInfo(fromId, Some(transaction.id))
       context.become(accountCheckContext)
 
     case invalid @ Invalid(_) =>
@@ -110,7 +110,7 @@ class TransactionManager(accountManager: ActorRef)(implicit val transactionServi
         }
       )
 
-    case msg @ AccountManager.InsufficientFunds(transactionId, accountInfo) =>
+    case msg @ AccountManager.InsufficientFunds(_, transactionId, _) =>
       processRequest(transactionId, { _ forward msg})
       transactionService.updateTransactionStatus(transactionId, TransactionStatus.ERROR)
 
@@ -209,20 +209,20 @@ object TransactionManager {
   }
   case class Transfer(from: Uuid, to: Uuid, amount: BigDecimal) extends Validatable[Transfer] {
     override def validate: ValidationResult[Transfer] = (
-      validateTo,
       validateFrom,
+      validateTo,
       validateAmount
     ).mapN(Transfer)
 
     private def validateTo: ValidationResult[Uuid] =
       if (to.isEmpty) IdIsEmpty.invalidNel
       else if (!to.matches(uuidRegEx)) IdFormatIsInvalid.invalidNel
-      else if (to equals from) SourceAndDestinationAreTheSame.invalidNel
       else to.validNel
 
     private def validateFrom: ValidationResult[Uuid] =
       if (from.isEmpty) IdIsEmpty.invalidNel
       else if (!from.matches(uuidRegEx)) IdFormatIsInvalid.invalidNel
+      else if (from equals to) SourceAndDestinationAreTheSame.invalidNel
       else from.validNel
 
     private def validateAmount: ValidationResult[BigDecimal] =

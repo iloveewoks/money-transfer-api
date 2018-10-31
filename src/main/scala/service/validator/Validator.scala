@@ -1,6 +1,8 @@
 package service.validator
 
 import cats.data.ValidatedNel
+import model.AccountInfo
+import model.Info.Uuid
 import service.validator.Validator.ValidationResult
 
 object Validator {
@@ -20,6 +22,8 @@ case object IdFormatIsInvalid extends ValidationFailure("Id format is not valid 
 case object AmountIsNotPositive extends ValidationFailure("Amount should be positive")
 case object SourceAndDestinationAreTheSame extends ValidationFailure("Source and destination accounts should not be the same")
 
-case class InvalidUuidFormatException(message: String) extends Exception(message)
-case class NoSuchAccountException(message: String) extends Exception(message)
-case class NoSuchTransactionException(message: String) extends Exception(message)
+case class InvalidUuidFormatException(id: Uuid) extends Exception(s"UUID $id is invalid")
+case class NoSuchAccountException(id: Uuid) extends Exception(s"Account with UUID $id not found")
+case class NoSuchTransactionException(id: Uuid) extends Exception(s"Transaction with UUID $id not found")
+case class InsufficientFundsException(accountInfo: AccountInfo, transactionId: Uuid)
+  extends Exception(s"Not enough funds on account $accountInfo during transaction $transactionId")

@@ -14,9 +14,9 @@ class AccountService()(implicit val accountRepository: AccountRepository) {
     if (id matches uuidRegEx) {
       accountRepository.findById(id) match {
         case Some(info) => Success(info)
-        case None => Failure(NoSuchAccountException(s"Account with UUID $id not found"))
+        case None => Failure(NoSuchAccountException(id))
       }
-    } else Failure(InvalidUuidFormatException(s"UUID $id is invalid"))
+    } else Failure(InvalidUuidFormatException(id))
   }
 
   def findAll: Iterable[AccountInfo] = accountRepository findAll

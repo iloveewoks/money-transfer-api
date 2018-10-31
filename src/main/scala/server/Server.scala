@@ -4,7 +4,6 @@ import actors.{AccountManager, TransactionManager}
 import akka.Done
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.pattern._
@@ -37,7 +36,7 @@ trait RestService extends JsonSupport {
       path(accountsPrefix) {
         post {
           onSuccess(accountManager ? AccountManager.CreateAccount) {
-            case info @ AccountInfo(_, _) => complete(info)
+            case info @ AccountInfo(_, _) => complete(StatusCodes.Created, info)
           }
         }
       } ~
@@ -46,8 +45,8 @@ trait RestService extends JsonSupport {
           get {
             onSuccess(accountManager ? AccountManager.GetAccountInfo(id.toString)) {
               case AccountManager.AccountInfoMsg(info, _) => complete(info)
-              case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
-              case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
+              case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.getMessage)
+              case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.getMessage)
             }
           }
         }
@@ -67,8 +66,8 @@ trait RestService extends JsonSupport {
           get {
             onSuccess(transactionManager ? TransactionManager.GetTransactionInfo(id.toString)) {
               case info: TransactionInfo => complete(info)
-              case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
-              case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
+              case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.getMessage)
+              case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.getMessage)
             }
           }
         }
@@ -79,9 +78,9 @@ trait RestService extends JsonSupport {
             entity(as[Valid[TransactionManager.Deposit]]) { deposit =>
               onSuccess(transactionManager ? deposit) {
                 case TransactionManager.TransactionCompleted(transaction) => complete(transaction)
-                case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
-                case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
-                case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
+                case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.getMessage)
+                case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.getMessage)
+                case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.getMessage)
               }
             }
           }
@@ -93,11 +92,10 @@ trait RestService extends JsonSupport {
             entity(as[Valid[TransactionManager.Withdraw]]) { withdraw =>
               onSuccess(transactionManager ? withdraw) {
                 case TransactionManager.TransactionCompleted(transaction) => complete(transaction)
-                case AccountManager.InsufficientFunds(transactionId, accountInfo) =>
-                  complete(StatusCodes.BadRequest, s"Not enough funds on account $accountInfo during transaction $transactionId")
-                case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
-                case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
-                case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
+                case AccountManager.InsufficientFunds(ex, _, _) => complete(StatusCodes.BadRequest, ex.getMessage)
+                case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.getMessage)
+                case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.getMessage)
+                case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.getMessage)
               }
             }
           }
@@ -109,11 +107,10 @@ trait RestService extends JsonSupport {
             entity(as[Valid[TransactionManager.Transfer]]) { transfer =>
               onSuccess(transactionManager ? transfer) {
                 case TransactionManager.TransactionCompleted(transaction) => complete(transaction)
-                case AccountManager.InsufficientFunds(transactionId, accountInfo) =>
-                  complete(StatusCodes.BadRequest, s"Not enough funds on account $accountInfo during transaction $transactionId")
-                case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.message)
-                case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.message)
-                case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.message)
+                case AccountManager.InsufficientFunds(ex, _, _) => complete(StatusCodes.BadRequest, ex.getMessage)
+                case TransactionManager.NoSuchTransaction(ex, _) => complete(StatusCodes.NotFound, ex.getMessage)
+                case AccountManager.NoSuchAccount(ex, _, _) => complete(StatusCodes.NotFound, ex.getMessage)
+                case AccountManager.InvalidUuidFormat(ex, _, _) => complete(StatusCodes.BadRequest, ex.getMessage)
               }
             }
           }

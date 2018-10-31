@@ -6,6 +6,7 @@ import model.{AccountInfo, Info}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpecLike, Matchers}
 import repository.AccountInMemoryRepository
 import service.AccountService
+import service.validator.InsufficientFundsException
 import service.validator.Validator.uuidRegEx
 
 class AccountManagerSpec extends TestKit(ActorSystem("actor-test"))
@@ -115,7 +116,11 @@ class AccountManagerSpec extends TestKit(ActorSystem("actor-test"))
                 val trId = Info.randomUuid
                 accountManager ! Withdraw(baseId, trId, amount)
 
-                expectMsg(InsufficientFunds(trId, AccountInfo(baseId, baseBalance)))
+                expectMsg(InsufficientFunds(
+                  InsufficientFundsException(AccountInfo(baseId, baseBalance), trId),
+                  trId,
+                  AccountInfo(baseId, baseBalance))
+                )
             }
         }
     }

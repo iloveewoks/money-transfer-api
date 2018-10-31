@@ -5,7 +5,7 @@ import model.{AccountInfo, UpdateInfo}
 import model.Info.Uuid
 import service.AccountService
 import service.validator.Validator.uuidRegEx
-import service.validator.{InvalidUuidFormatException, NoSuchAccountException}
+import service.validator.{InsufficientFundsException, InvalidUuidFormatException, NoSuchAccountException}
 
 import scala.util.{Failure, Success}
 
@@ -104,7 +104,7 @@ object AccountManager {
   case class DepositSuccess(transactionId: Uuid, info: AccountInfo) extends UpdateInfo[AccountInfo]
   case class WithdrawalSuccess(transactionId: Uuid, info: AccountInfo) extends UpdateInfo[AccountInfo]
 
-  case class InsufficientFunds(transactionId: Uuid, info: AccountInfo)
+  case class InsufficientFunds(ex: InsufficientFundsException, transactionId: Uuid, info: AccountInfo)
   case class InvalidUuidFormat(ex: InvalidUuidFormatException, id: Uuid, transactionId: Option[Uuid] = None)
   case class NoSuchAccount(ex: NoSuchAccountException, id: Uuid, transactionId: Option[Uuid] = None)
 }
