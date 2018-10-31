@@ -1,6 +1,6 @@
 name := "money-transfer-api"
 
-version := "0.1"
+version := "1.0"
 
 scalaVersion := "2.12.7"
 val akkaVersion = "2.5.17"
@@ -9,6 +9,7 @@ val akkaHttpVersion = "10.1.5"
 scalacOptions += "-Ypartial-unification"
 
 resolvers += "dnvriend" at "http://dl.bintray.com/dnvriend/maven"
+resolvers += Resolver.url("bintray-sbt-plugins", url("https://dl.bintray.com/eed3si9n/sbt-plugins/"))(Resolver.ivyStylePatterns)
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 libraryDependencies += "com.typesafe.akka" %% "akka-persistence" % akkaVersion
