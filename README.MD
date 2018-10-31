@@ -7,7 +7,7 @@ To make a fat Jar of the app execute:
 ```sh
 $ sbt assembly
 ```
-Resulting Jar would be in the *{project}*/target/scala-2.12/ directory
+Resulting Jar would be in the ****{project}*/target/scala-2.12/*** directory
 
 ## API
 ### Accounts
